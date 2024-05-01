@@ -23,6 +23,7 @@ jobs:
           AGENT_STATIC_WEB_ENDPOINT: ${{ secrets.AGENT_STATIC_WEB_ENDPOINT }}
         run: |
           deno run --allow-all index.ts &
+          echo "Waiting"
           sleep 30m
 
       - name: Start Next
