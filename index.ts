@@ -3,12 +3,21 @@ import { supabaseServiceRole } from './lib/supabase.ts';
 
 const channel = supabaseServiceRole.channel('queue-service');
 
+let connects = 0;
+let itsTimeToStop = false;
+setTimeout(() => (itsTimeToStop = true), 30 * 60 * 1000);
+
 channel
   .on('presence', { event: 'sync' }, () => {
     const allConnects = channel.presenceState();
-    console.log('connects', Object.keys(allConnects).length);
-    if (Object.keys(allConnects).length === 0) {
+    connects = Object.keys(allConnects).length;
+    console.log('connects', connects);
+    if (!itsTimeToStop && connects === 0) {
       startService();
+    }
+    if (itsTimeToStop && connects > 1) {
+      // Others are connected
+      channel.unsubscribe();
     }
   })
   .subscribe(async (status) => {
@@ -40,6 +49,10 @@ async function startService() {
         filter: `queue_type=eq.github_action`,
       },
       async (payload) => {
+        if (itsTimeToStop && connects > 1) {
+          // No longer accepting new requests
+          return;
+        }
         await dispatchMessage(payload.new);
       }
     )
