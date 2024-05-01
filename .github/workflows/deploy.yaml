@@ -5,7 +5,7 @@ on:
   #  - cron: '*/30 * * * *'
 
 jobs:
-  env:
+  queue-service:
     runs-on: ubuntu-latest
     permissions:
       actions: write
