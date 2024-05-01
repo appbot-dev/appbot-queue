@@ -112,7 +112,7 @@ async function dispatchMessage(record: Tables<'queue_message'>) {
       console.error(
         `Error Fetching: id=${record.id}, queue=${record.queue}, status=${
           resp.status
-        }, body=${resp.text()}`
+        }, body=${await resp.text()}`
       );
     }
   } catch (e) {
