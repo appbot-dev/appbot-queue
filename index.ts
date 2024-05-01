@@ -1,21 +1,24 @@
 import { Tables } from './lib/database.types.ts';
 import { supabaseServiceRole } from './lib/supabase.ts';
 
-const channel = supabaseServiceRole.channel('queue-service');
+const uuid = crypto.randomUUID();
+const channel = supabaseServiceRole.channel('queue-service', {
+  config: { presence: { key: uuid } },
+});
 
-let connects = 0;
+let otherConnects = 0;
 let itsTimeToStop = false;
 setTimeout(() => (itsTimeToStop = true), 30 * 60 * 1000);
 
 channel
   .on('presence', { event: 'sync' }, () => {
     const allConnects = channel.presenceState();
-    connects = Object.keys(allConnects).length;
-    console.log('connects', connects);
-    if (!itsTimeToStop && connects === 0) {
+    otherConnects = Object.keys(allConnects).filter((key) => key !== uuid).length;
+    console.log('other connects', otherConnects);
+    if (!itsTimeToStop && otherConnects === 0) {
       startService();
     }
-    if (itsTimeToStop && connects > 1) {
+    if (itsTimeToStop && otherConnects > 0) {
       // Others are connected
       channel.unsubscribe();
     }
@@ -49,7 +52,7 @@ async function startService() {
         filter: `queue_type=eq.github_action`,
       },
       async (payload) => {
-        if (itsTimeToStop && connects > 1) {
+        if (itsTimeToStop && otherConnects > 0) {
           // No longer accepting new requests
           return;
         }
