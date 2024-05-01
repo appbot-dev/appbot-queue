@@ -1,0 +1,8 @@
+# Supabase
+**/supabase/.branches
+**/supabase/.temp
+
+.vscode/*
+!.vscode/extensions.json
+
+*.local

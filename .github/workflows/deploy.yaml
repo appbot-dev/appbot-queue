@@ -1,0 +1,50 @@
+name: Deploy Queue
+on:
+  workflow_dispatch:
+  #schedule:
+  #  - cron: '*/30 * * * *'
+
+jobs:
+  env:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Start Service
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          AGENT_AUTH_SECRET: ${{ secrets.AGENT_AUTH_SECRET }}
+          AGENT_STATIC_WEB_ENDPOINT: ${{ secrets.AGENT_STATIC_WEB_ENDPOINT }}
+        run: |
+          deno run --allow-all index.ts &
+          sleep 30m
+
+      - name: Start Next
+        uses: actions/github-script@v6
+        if: ${{ !cancelled() }}
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: '${{ github.repository_owner }}',
+              repo: '${{ github.event.repository.name }}',
+              workflow_id: 'deploy.yaml',
+              ref: 'main'
+            })
+
+      - name: Wait
+        run: sleep 5m
+
+      - name: Clean workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        if: ${{ !cancelled() }}
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 7
+          keep_minimum_runs: 48

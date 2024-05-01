@@ -1,0 +1,22 @@
+{
+  "imports": {
+    "supabase": "https://esm.sh/@supabase/supabase-js@2.38.4"
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": true
+  },
+  "lint": {
+    "rules": {
+      "tags": [
+        "recommended"
+      ],
+      "exclude": [
+        "no-unused-vars"
+      ]
+    }
+  }
+}
