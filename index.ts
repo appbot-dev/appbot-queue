@@ -102,7 +102,10 @@ async function dispatchMessage(record: Tables<'queue_message'>) {
   try {
     const resp = await fetch(endpoint, {
       method: 'POST',
-      body: JSON.stringify(record.message),
+      body: JSON.stringify({
+        ...(record.message as object),
+        queue_message_id: record.id,
+      }),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': Deno.env.get('AGENT_AUTH_SECRET')!,
