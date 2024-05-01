@@ -68,6 +68,8 @@ async function dispatchMessage(record: Tables<'queue_message'>) {
   if (record.ack || record.queue_type !== 'github_action') {
     return;
   }
+  console.log(`received ${record.id} ${record.queue}`);
+
   let endpoint = '';
   switch (record.queue) {
     case 'static-web':
