@@ -11,7 +11,7 @@ let itsTimeToStop = false;
 setTimeout(() => (itsTimeToStop = true), 30 * 60 * 1000);
 
 channel
-  .on('presence', { event: 'sync' }, () => {
+  .on('presence', { event: 'sync' }, async () => {
     const allConnects = channel.presenceState();
     otherConnects = Object.keys(allConnects).filter((key) => key !== uuid).length;
     console.log('other connects', otherConnects);
@@ -20,7 +20,8 @@ channel
     }
     if (itsTimeToStop && otherConnects > 0) {
       // Others are connected
-      channel.unsubscribe();
+      await channel.untrack();
+      await channel.unsubscribe();
     }
   })
   .subscribe(async (status) => {
@@ -41,7 +42,7 @@ async function startService() {
   }
   isStarted = true;
 
-  supabaseServiceRole
+  const channel = supabaseServiceRole
     .channel('queue-message-changes')
     .on<Tables<'queue_message'>>(
       'postgres_changes',
@@ -52,8 +53,11 @@ async function startService() {
         filter: `queue_type=eq.github_action`,
       },
       async (payload) => {
+        console.log(`received ${payload.new.id}`);
         if (itsTimeToStop && otherConnects > 0) {
           // No longer accepting new requests
+          console.log('not accepting new requests');
+          await channel.unsubscribe();
           return;
         }
         await dispatchMessage(payload.new);
@@ -84,7 +88,7 @@ async function dispatchMessage(record: Tables<'queue_message'>) {
   if (record.ack || record.queue_type !== 'github_action') {
     return;
   }
-  console.log(`received ${record.id} ${record.queue}`);
+  console.log(`dispatch ${record.id} ${record.queue}`);
 
   let endpoint = '';
   switch (record.queue) {
